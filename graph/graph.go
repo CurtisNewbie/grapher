@@ -29,23 +29,23 @@ type DGraph struct {
 	Nodes []Node
 	Edges []DEdge
 
-	NodeEdges map[int][]int
+	Neighbours map[int][]int
 }
 
 func (d *DGraph) build() {
-	d.NodeEdges = map[int][]int{}
+	d.Neighbours = map[int][]int{}
 	for _, n := range d.Edges {
-		tids, ok := d.NodeEdges[n.FromId]
+		tids, ok := d.Neighbours[n.FromId]
 		if ok {
 			i, found := slices.BinarySearch(tids, n.ToId)
 			if !found {
 				tids = append(tids, n.ToId)
 				copy(tids[i+1:], tids[i:])
 				tids[i] = n.ToId
-				d.NodeEdges[n.FromId] = tids
+				d.Neighbours[n.FromId] = tids
 			}
 		} else {
-			d.NodeEdges[n.FromId] = []int{n.ToId}
+			d.Neighbours[n.FromId] = []int{n.ToId}
 		}
 	}
 }
@@ -70,7 +70,7 @@ func (d *DGraph) Connected(rootId int, targetId int) bool {
 		queue = queue[:len(queue)-1]
 		met[pop] = struct{}{}
 
-		adj, ok := d.NodeEdges[pop]
+		adj, ok := d.Neighbours[pop]
 		if !ok {
 			continue
 		}
