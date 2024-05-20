@@ -6,26 +6,11 @@ import (
 
 func TestDGraph(t *testing.T) {
 	nodes := []Node{}
-	nodes = append(nodes, Node{
-		Id:    1,
-		Label: "1. mini-fstore",
-	})
-	nodes = append(nodes, Node{
-		Id:    2,
-		Label: "2. vfm",
-	})
-	nodes = append(nodes, Node{
-		Id:    3,
-		Label: "3. user-vault",
-	})
-	nodes = append(nodes, Node{
-		Id:    4,
-		Label: "4. goauth",
-	})
-	nodes = append(nodes, Node{
-		Id:    5,
-		Label: "5. banana",
-	})
+	nodes = append(nodes, Node{Id: 1, Label: "mini-fstore"})
+	nodes = append(nodes, Node{Id: 2, Label: "vfm"})
+	nodes = append(nodes, Node{Id: 3, Label: "user-vault"})
+	nodes = append(nodes, Node{Id: 4, Label: "goauth"})
+	nodes = append(nodes, Node{Id: 5, Label: "banana"})
 
 	edges := []DEdge{}
 	edges = append(edges, DEdge{FromId: 2, ToId: 3})
@@ -35,6 +20,7 @@ func TestDGraph(t *testing.T) {
 	edges = append(edges, DEdge{FromId: 5, ToId: 1})
 
 	graph, err := NewDGraph("mygraph", nodes, edges)
+	graph.DisplayId = true
 	if err != nil {
 		t.Fatal(err)
 	}

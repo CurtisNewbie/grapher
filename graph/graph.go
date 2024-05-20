@@ -32,6 +32,8 @@ type DGraph struct {
 	nodeIdx    map[int]int     // id -> nodes idx
 	neighbours map[int][]int   // fromId -> toId
 	nodeEdges  map[int][]DEdge // id -> edges
+
+	DisplayId bool
 }
 
 func (d *DGraph) build() error {
@@ -111,7 +113,11 @@ func (d *DGraph) Subgraph(rootId int) (*DGraph, error) {
 		}
 	}
 
-	return NewDGraph(d.title, nodes, edges)
+	sub, err := NewDGraph(d.title, nodes, edges)
+	if err == nil {
+		sub.DisplayId = d.DisplayId
+	}
+	return sub, err
 }
 
 func (d *DGraph) Connected(rootId int, targetId int) bool {
@@ -158,8 +164,12 @@ func (d *DGraph) Draw(w io.Writer) error {
 
 	buf := bytes.Buffer{}
 	for _, n := range d.nodes {
+		label := n.Label
+		if d.DisplayId {
+			label = fmt.Sprintf("%d. %s", n.Id, n.Label)
+		}
 		buf.WriteString(fmt.Sprintf("N%v [label=\"%v\" id=\"node%v\" fontsize=8 shape=box tooltip=\"%v\" color=\"#b20400\" fillcolor=\"#edd6d5\"]\n",
-			n.Id, n.Label, n.Id, n.Tooltip))
+			n.Id, label, n.Id, n.Tooltip))
 	}
 
 	for _, ed := range d.edges {
