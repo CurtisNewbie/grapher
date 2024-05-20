@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"runtime"
 	"slices"
+	"strings"
 )
 
 type DEdge struct {
@@ -34,10 +35,10 @@ type DGraph struct {
 	nodeEdges  map[int][]DEdge // id -> edges
 
 	DisplayId bool
-	RankSep   string // default: 1
-	NodeSep   string // default: 1.5
-	Ratio     string // default: auto
-	Pad       string // default: 0.5
+	RankSep   string
+	NodeSep   string
+	Ratio     string
+	Pad       string
 }
 
 func (d *DGraph) build() error {
@@ -72,6 +73,16 @@ func (d *DGraph) build() error {
 		d.nodeIdx[n.Id] = i
 	}
 	return nil
+}
+
+func (d *DGraph) FindNodeLike(label string) []Node {
+	res := []Node{}
+	for i, n := range d.nodes {
+		if strings.Contains(n.Label, label) {
+			res = append(res, d.nodes[i])
+		}
+	}
+	return res
 }
 
 func (d *DGraph) node(id int) (Node, bool) {
@@ -196,6 +207,7 @@ func (d *DGraph) writeGraphAttr(w io.Writer) error {
 	b.WriteString(fmt.Sprintf("nodesep=%s\n", d.NodeSep))
 	b.WriteString(fmt.Sprintf("ratio=\"%s\"\n", d.Ratio))
 	b.WriteString("constraint = false\n")
+	b.WriteString("overlap=false\n")
 	b.WriteString("fontname=\"Helvetica,Arial,sans-serif\"\n")
 	b.WriteString("node [fontname=\"Helvetica,Arial,sans-serif\"]\n")
 	b.WriteString("edge [fontname=\"Helvetica,Arial,sans-serif\"]\n")
@@ -209,7 +221,7 @@ func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 	d.title = title
 	d.nodes = nodes
 	d.edges = edges
-	d.NodeSep = "1.5"
+	d.NodeSep = "1"
 	d.RankSep = "1"
 	d.Ratio = "auto"
 	d.Pad = "0.5"

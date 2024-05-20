@@ -1,0 +1,44 @@
+[INFO] Scanning for projects...
+[WARNING]
+[WARNING] Some problems were encountered while building the effective model for com.curtisnewbie:todo-app:jar:2.9
+[WARNING] 'build.plugins.plugin.version' for org.apache.maven.plugins:maven-compiler-plugin is missing. @ line 124, column 15
+[WARNING] The expression ${version} is deprecated. Please use ${project.version} instead.
+[WARNING]
+[WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
+[WARNING]
+[WARNING] For this reason, future Maven versions might no longer support building such malformed projects.
+[WARNING]
+[INFO]
+[INFO] ---------------------< com.curtisnewbie:todo-app >----------------------
+[INFO] Building todo-app 2.9
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- dependency:3.6.1:tree (default-cli) @ todo-app ---
+[INFO] com.curtisnewbie:todo-app:jar:2.9
+[INFO] +- junit:junit:jar:3.8.1:test
+[INFO] +- com.fasterxml.jackson.core:jackson-core:jar:2.11.2:compile
+[INFO] +- com.fasterxml.jackson.core:jackson-databind:jar:2.11.2:compile
+[INFO] |  \- com.fasterxml.jackson.core:jackson-annotations:jar:2.11.2:compile
+[INFO] +- org.xerial:sqlite-jdbc:jar:3.34.0:compile
+[INFO] +- org.projectlombok:lombok:jar:1.18.20:compile
+[INFO] +- ch.qos.logback:logback-classic:jar:1.2.5:compile
+[INFO] |  +- ch.qos.logback:logback-core:jar:1.2.5:compile
+[INFO] |  \- org.slf4j:slf4j-api:jar:1.7.31:compile
+[INFO] +- io.projectreactor:reactor-core:jar:3.4.9:compile
+[INFO] |  \- org.reactivestreams:reactive-streams:jar:1.0.3:compile
+[INFO] +- io.projectreactor:reactor-test:jar:3.4.9:test
+[INFO] +- org.openjfx:javafx-controls:jar:15:compile
+[INFO] |  +- org.openjfx:javafx-controls:jar:mac:15:compile
+[INFO] |  \- org.openjfx:javafx-graphics:jar:15:compile
+[INFO] +- org.openjfx:javafx-graphics:jar:win:15:compile
+[INFO] |  \- org.openjfx:javafx-base:jar:15:compile
+[INFO] |     \- org.openjfx:javafx-base:jar:mac:15:compile
+[INFO] +- org.openjfx:javafx-graphics:jar:mac:15:compile
+[INFO] \- org.openjfx:javafx-graphics:jar:linux:15:compile
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  0.506 s
+[INFO] Finished at: 2024-05-20T22:33:52+08:00
+[INFO] ------------------------------------------------------------------------
