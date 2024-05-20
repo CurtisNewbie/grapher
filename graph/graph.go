@@ -273,10 +273,10 @@ func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 	d.title = title
 	d.nodes = nodes
 	d.edges = edges
-	d.NodeSep = "1"
-	d.RankSep = "1"
+	d.NodeSep = "0.5"
+	d.RankSep = "0.5"
 	d.Ratio = "auto"
-	d.Pad = "0.5"
+	d.Pad = "0.3"
 	if err := d.build(); err != nil {
 		return nil, err
 	}

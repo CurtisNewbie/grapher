@@ -64,9 +64,6 @@ func ParseMvnTree(title string, s string) (*graph.DGraph, error) {
 			if l == "" {
 				continue
 			}
-			if strings.HasSuffix(l, ":test") {
-				continue
-			}
 
 			l = l[7:] // "[INFO] "
 			idt := 0
@@ -90,10 +87,21 @@ func ParseMvnTree(title string, s string) (*graph.DGraph, error) {
 			{
 				var ok bool
 				l, ok = strings.CutSuffix(l, ":compile")
-				if !ok {
-					l, _ = strings.CutSuffix(l, ":runtime")
+				if ok {
+					goto CUT_SUF_END
 				}
+				l, ok = strings.CutSuffix(l, ":test")
+				if ok {
+					goto CUT_SUF_END
+				}
+				l, ok = strings.CutSuffix(l, ":provided")
+				if ok {
+					goto CUT_SUF_END
+				}
+				l, _ = strings.CutSuffix(l, ":runtime")
 			}
+
+		CUT_SUF_END:
 
 			if len(parents) < 1 {
 				v := newEntry(l, layer)
