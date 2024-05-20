@@ -34,6 +34,10 @@ type DGraph struct {
 	nodeEdges  map[int][]DEdge // id -> edges
 
 	DisplayId bool
+	RankSep   string // default: 1
+	NodeSep   string // default: 1.5
+	Ratio     string // default: auto
+	Pad       string // default: 0.5
 }
 
 func (d *DGraph) build() error {
@@ -44,7 +48,7 @@ func (d *DGraph) build() error {
 		if ok {
 			i, found := slices.BinarySearch(tids, n.ToId)
 			if found {
-				return fmt.Errorf("Found duplicate edges on id: %v to id: %v", n.FromId, n.ToId)
+				return fmt.Errorf("found duplicate edges on id: %v to id: %v", n.FromId, n.ToId)
 			}
 			tids = append(tids, n.ToId)
 			copy(tids[i+1:], tids[i:])
@@ -187,7 +191,11 @@ func (d *DGraph) Draw(w io.Writer) error {
 func (d *DGraph) writeGraphAttr(w io.Writer) error {
 	b := bytes.Buffer{}
 	b.WriteString(fmt.Sprintf("digraph \"[%v]\" {\n", d.title))
-	b.WriteString("pad=0.5\n")
+	b.WriteString(fmt.Sprintf("pad=%s\n", d.Pad))
+	b.WriteString(fmt.Sprintf("ranksep=%s\n", d.RankSep))
+	b.WriteString(fmt.Sprintf("nodesep=%s\n", d.NodeSep))
+	b.WriteString(fmt.Sprintf("ratio=\"%s\"\n", d.Ratio))
+	b.WriteString("constraint = false\n")
 	b.WriteString("fontname=\"Helvetica,Arial,sans-serif\"\n")
 	b.WriteString("node [fontname=\"Helvetica,Arial,sans-serif\"]\n")
 	b.WriteString("edge [fontname=\"Helvetica,Arial,sans-serif\"]\n")
@@ -201,6 +209,10 @@ func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 	d.title = title
 	d.nodes = nodes
 	d.edges = edges
+	d.NodeSep = "1.5"
+	d.RankSep = "1"
+	d.Ratio = "auto"
+	d.Pad = "0.5"
 	if err := d.build(); err != nil {
 		return nil, err
 	}
