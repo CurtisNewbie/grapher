@@ -25,35 +25,99 @@ type Node struct {
 }
 
 type DGraph struct {
-	Title string
-	Nodes []Node
-	Edges []DEdge
+	title string
+	nodes []Node
+	edges []DEdge
 
-	Neighbours map[int][]int
+	nodeIdx    map[int]int     // id -> nodes idx
+	neighbours map[int][]int   // fromId -> toId
+	nodeEdges  map[int][]DEdge // id -> edges
 }
 
-func (d *DGraph) build() {
-	d.Neighbours = map[int][]int{}
-	for _, n := range d.Edges {
-		tids, ok := d.Neighbours[n.FromId]
+func (d *DGraph) build() error {
+	d.neighbours = map[int][]int{}
+	d.nodeEdges = map[int][]DEdge{}
+	for _, n := range d.edges {
+		tids, ok := d.neighbours[n.FromId]
 		if ok {
 			i, found := slices.BinarySearch(tids, n.ToId)
-			if !found {
-				tids = append(tids, n.ToId)
-				copy(tids[i+1:], tids[i:])
-				tids[i] = n.ToId
-				d.Neighbours[n.FromId] = tids
+			if found {
+				return fmt.Errorf("Found duplicate edges on id: %v to id: %v", n.FromId, n.ToId)
 			}
+			tids = append(tids, n.ToId)
+			copy(tids[i+1:], tids[i:])
+			tids[i] = n.ToId
+			d.neighbours[n.FromId] = tids
 		} else {
-			d.Neighbours[n.FromId] = []int{n.ToId}
+			d.neighbours[n.FromId] = []int{n.ToId}
+		}
+
+		if ae, ok := d.nodeEdges[n.FromId]; ok {
+			d.nodeEdges[n.FromId] = append(ae, n)
+		} else {
+			d.nodeEdges[n.FromId] = []DEdge{n}
 		}
 	}
+	d.nodeIdx = map[int]int{}
+	for i, n := range d.nodes {
+		if _, ok := d.nodeIdx[n.Id]; ok {
+			return fmt.Errorf("Node id duplicate found, id: %v", n.Id)
+		}
+		d.nodeIdx[n.Id] = i
+	}
+	return nil
+}
+
+func (d *DGraph) node(id int) (Node, bool) {
+	idx, ok := d.nodeIdx[id]
+	if !ok {
+		return Node{}, false
+	}
+	return d.nodes[idx], true
+}
+
+func (d *DGraph) Subgraph(rootId int) (*DGraph, error) {
+	var root Node
+	var found bool = false
+	for _, n := range d.nodes {
+		if n.Id == rootId {
+			root = n
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, fmt.Errorf("rootId %v not found", rootId)
+	}
+
+	met := map[int]struct{}{}
+	var parents []Node = []Node{root}
+	var nodes []Node = []Node{root}
+	var edges []DEdge = []DEdge{}
+
+	for len(parents) > 0 {
+		p := parents[len(parents)-1]
+		met[p.Id] = struct{}{}
+		parents = parents[:len(parents)-1]
+		edges = append(edges, d.nodeEdges[p.Id]...)
+
+		for _, c := range d.neighbours[p.Id] {
+			if _, ok := met[c]; ok {
+				continue
+			}
+			nn, _ := d.node(c)
+			parents = append(parents, nn)
+			nodes = append(nodes, nn)
+		}
+	}
+
+	return NewDGraph(d.title, nodes, edges)
 }
 
 func (d *DGraph) Connected(rootId int, targetId int) bool {
 	var rootFound bool = false
 	var root Node
-	for _, n := range d.Nodes {
+	for _, n := range d.nodes {
 		if n.Id == rootId {
 			root = n
 			rootFound = true
@@ -70,7 +134,7 @@ func (d *DGraph) Connected(rootId int, targetId int) bool {
 		queue = queue[:len(queue)-1]
 		met[pop] = struct{}{}
 
-		adj, ok := d.Neighbours[pop]
+		adj, ok := d.neighbours[pop]
 		if !ok {
 			continue
 		}
@@ -93,12 +157,12 @@ func (d *DGraph) Draw(w io.Writer) error {
 	}
 
 	buf := bytes.Buffer{}
-	for _, n := range d.Nodes {
+	for _, n := range d.nodes {
 		buf.WriteString(fmt.Sprintf("N%v [label=\"%v\" id=\"node%v\" fontsize=8 shape=box tooltip=\"%v\" color=\"#b20400\" fillcolor=\"#edd6d5\"]\n",
 			n.Id, n.Label, n.Id, n.Tooltip))
 	}
 
-	for _, ed := range d.Edges {
+	for _, ed := range d.edges {
 		buf.WriteString(fmt.Sprintf("N%v -> N%v [label=\" %s\" labelfloat=false fontsize=6 weight=1 color=\"#b2a999\" tooltip=\"%s\"]\n",
 			ed.FromId, ed.ToId, ed.Label, ed.Tooltip))
 	}
@@ -112,7 +176,7 @@ func (d *DGraph) Draw(w io.Writer) error {
 
 func (d *DGraph) writeGraphAttr(w io.Writer) error {
 	b := bytes.Buffer{}
-	b.WriteString(fmt.Sprintf("digraph \"[%v]\" {\n", d.Title))
+	b.WriteString(fmt.Sprintf("digraph \"[%v]\" {\n", d.title))
 	b.WriteString("pad=0.5\n")
 	b.WriteString("fontname=\"Helvetica,Arial,sans-serif\"\n")
 	b.WriteString("node [fontname=\"Helvetica,Arial,sans-serif\"]\n")
@@ -122,13 +186,15 @@ func (d *DGraph) writeGraphAttr(w io.Writer) error {
 	return err
 }
 
-func NewDGraph(title string, nodes []Node, edges []DEdge) *DGraph {
+func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 	d := new(DGraph)
-	d.Title = title
-	d.Nodes = nodes
-	d.Edges = edges
-	d.build()
-	return d
+	d.title = title
+	d.nodes = nodes
+	d.edges = edges
+	if err := d.build(); err != nil {
+		return nil, err
+	}
+	return d, nil
 }
 
 //go:embed graph.html
@@ -149,6 +215,7 @@ func DotGen(g *DGraph) error {
 		return err
 	}
 	defer of.Close()
+	of.Truncate(0)
 
 	if err := g.Draw(of); err != nil {
 		return err

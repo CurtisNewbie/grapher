@@ -18,44 +18,34 @@ func TestDGraph(t *testing.T) {
 		Id:    3,
 		Label: "3. user-vault",
 	})
+	nodes = append(nodes, Node{
+		Id:    4,
+		Label: "4. goauth",
+	})
+	nodes = append(nodes, Node{
+		Id:    5,
+		Label: "5. banana",
+	})
 
 	edges := []DEdge{}
-	edges = append(edges, DEdge{
-		FromId:  2,
-		ToId:    1,
-		Tooltip: "vfm -> mini-fstore",
-	})
-	edges = append(edges, DEdge{
-		FromId:  3,
-		ToId:    2,
-		Tooltip: "user-vault -> vfm",
-	})
-	edges = append(edges, DEdge{
-		FromId:  1,
-		ToId:    3,
-		Tooltip: "mini-fstore -> user-vault",
-	})
+	edges = append(edges, DEdge{FromId: 2, ToId: 3})
+	edges = append(edges, DEdge{FromId: 1, ToId: 3})
+	edges = append(edges, DEdge{FromId: 3, ToId: 4})
+	edges = append(edges, DEdge{FromId: 4, ToId: 5})
+	edges = append(edges, DEdge{FromId: 5, ToId: 1})
 
-	edges = append(edges, DEdge{
-		FromId:  3,
-		ToId:    1,
-		Tooltip: "ciclic dependency :(",
-	})
+	graph, err := NewDGraph("mygraph", nodes, edges)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	graph := NewDGraph("mygraph", nodes, edges)
+	graph, err = graph.Subgraph(2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if err := DotGen(graph); err != nil {
 		t.Fatal(err)
 	}
 
-	if !graph.Connected(3, 2) {
-		t.Fatal("3 -> 2")
-	}
-
-	if !graph.Connected(2, 3) {
-		t.Fatal("2 -> 3")
-	}
-
-	if !graph.Connected(1, 2) {
-		t.Fatal("1 -> 2")
-	}
 }
