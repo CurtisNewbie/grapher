@@ -30,8 +30,8 @@ type DGraph struct {
 	nodes []Node
 	edges []DEdge
 
-	nodeIdx    map[int]int     // id -> nodes idx
-	neighbours map[int][]int   // fromId -> toId
+	nodeMap    map[int]Node    // id -> node
+	neighbours map[int][]int   // from_id -> to_id
 	nodeEdges  map[int][]DEdge // id -> edges
 
 	DisplayId bool
@@ -65,12 +65,13 @@ func (d *DGraph) build() error {
 			d.nodeEdges[n.FromId] = []DEdge{n}
 		}
 	}
-	d.nodeIdx = map[int]int{}
-	for i, n := range d.nodes {
-		if _, ok := d.nodeIdx[n.Id]; ok {
+	d.nodeMap = map[int]Node{}
+	for i := range d.nodes {
+		n := d.nodes[i]
+		if _, ok := d.nodeMap[n.Id]; ok {
 			return fmt.Errorf("Node id duplicate found, id: %v", n.Id)
 		}
-		d.nodeIdx[n.Id] = i
+		d.nodeMap[n.Id] = n
 	}
 	return nil
 }
@@ -86,11 +87,62 @@ func (d *DGraph) FindNodeLike(label string) []Node {
 }
 
 func (d *DGraph) node(id int) (Node, bool) {
-	idx, ok := d.nodeIdx[id]
+	v, ok := d.nodeMap[id]
 	if !ok {
 		return Node{}, false
 	}
-	return d.nodes[idx], true
+	return v, true
+}
+
+func (d *DGraph) FilterBranch(f func(n Node) bool) {
+	met := map[int]struct{}{}
+	for i := len(d.nodes) - 1; i >= 0; i-- {
+		n := d.nodes[i]
+		if d.filterBranchAt(met, f, n.Id) {
+			continue
+		}
+		// fmt.Printf("removing node: %#v \n", n)
+
+		cp := []DEdge{}
+		for i := range d.edges {
+			ed := d.edges[i]
+			if ed.FromId == n.Id || ed.ToId == n.Id {
+				continue
+			}
+			cp = append(cp, ed)
+		}
+		d.edges = cp
+		d.nodes = append(d.nodes[:i], d.nodes[i+1:]...)
+		delete(d.neighbours, n.Id)
+		delete(d.nodeMap, n.Id)
+		delete(d.nodeEdges, n.Id)
+
+	}
+	// for _, n := range d.nodes {
+	// 	fmt.Printf("%#v\n", n)
+	// }
+}
+
+func (d *DGraph) filterBranchAt(met map[int]struct{}, f func(n Node) bool, id int) bool {
+	root := d.nodeMap[id]
+	if f(root) {
+		return true
+	}
+	for _, ne := range d.neighbours[id] {
+		if _, ok := met[ne]; ok {
+			continue
+		}
+		met[ne] = struct{}{}
+		n := d.nodeMap[ne]
+		if f(n) {
+			return true
+		}
+		// fmt.Printf("node not match: %#v\n", n)
+		if d.filterBranchAt(met, f, ne) {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *DGraph) Subgraph(rootId int) (*DGraph, error) {
@@ -256,7 +308,7 @@ func DotGen(g *DGraph) error {
 	}
 
 	cmd := exec.Command("bash", "-c", fmt.Sprintf("dot -Tsvg \"%s\" > \"%s\"", graphOutputName, graphSvgName))
-	fmt.Printf("%v", cmd)
+	// fmt.Printf("%v", cmd)
 	cmdout, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("dot failed, %v, %v", string(cmdout), err)

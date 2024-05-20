@@ -16,6 +16,7 @@ func TestParseMvnTree(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// g.FilterBranch(func(n graph.Node) bool { return strings.Contains(n.Label, "com.fasterxml") })
 	err = graph.DotGen(g)
 	if err != nil {
 		t.Fatal(err)
