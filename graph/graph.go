@@ -94,6 +94,7 @@ func (d *DGraph) node(id int) (Node, bool) {
 	return v, true
 }
 
+// TODO: call filterBranchAt recursively, refactor this
 func (d *DGraph) FilterBranch(f func(n Node) bool) {
 	met := map[int]struct{}{}
 	for i := len(d.nodes) - 1; i >= 0; i-- {
