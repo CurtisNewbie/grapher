@@ -26,7 +26,12 @@ func TestDGraph(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	graph, err = graph.Subgraph(2)
+	vfmn := graph.FindNodeLike("vfm")
+	if len(vfmn) < 1 {
+		t.Fatal("should find vfm")
+	}
+
+	graph, err = graph.Subgraph(vfmn[0].Id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +41,7 @@ func TestDGraph(t *testing.T) {
 	}
 }
 
-func TestDGraphFilterBranch(t *testing.T) {
+func TestDGraphTreeShake(t *testing.T) {
 	nodes := []Node{}
 	nodes = append(nodes, Node{Id: 1, Label: "mini-fstore"})
 	nodes = append(nodes, Node{Id: 2, Label: "vfm"})
@@ -52,12 +57,12 @@ func TestDGraphFilterBranch(t *testing.T) {
 	edges = append(edges, DEdge{FromId: 5, ToId: 1})
 
 	g, err := NewDGraph("mygraph", nodes, edges)
-	g.DisplayId = true
 	if err != nil {
 		t.Fatal(err)
 	}
+	// g.Debug = true
 
-	g.FilterBranch(func(n Node) bool { return !strings.Contains(n.Label, "-") })
+	g.TreeShake(func(n Node) bool { return !strings.Contains(n.Label, "-") })
 
 	if err := DotGen(g, DotGenParam{OpenViewer: true}); err != nil {
 		t.Fatal(err)

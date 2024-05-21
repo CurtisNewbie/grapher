@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+
+	"github.com/curtisnewbie/grapher/log"
 )
 
 type DEdge struct {
@@ -40,6 +42,7 @@ type DGraph struct {
 	NodeSep   string
 	Ratio     string
 	Pad       string
+	Debug     bool
 }
 
 func (d *DGraph) build() error {
@@ -95,15 +98,18 @@ func (d *DGraph) node(id int) (Node, bool) {
 	return v, true
 }
 
-// TODO: call filterBranchAt recursively, refactor this
-func (d *DGraph) FilterBranch(f func(n Node) bool) {
-	met := map[int]struct{}{}
+func (d *DGraph) TreeShake(f func(n Node) bool) {
+
 	for i := len(d.nodes) - 1; i >= 0; i-- {
+		met := map[int]struct{}{}
 		n := d.nodes[i]
-		if d.filterBranchAt(met, f, n.Id) {
+
+		if d.treeShakeAt(met, f, n.Id) {
 			continue
 		}
-		// fmt.Printf("removing node: %#v \n", n)
+		if d.Debug {
+			log.Debugf("removing node: %#v", n)
+		}
 
 		cp := []DEdge{}
 		for i := range d.edges {
@@ -120,16 +126,26 @@ func (d *DGraph) FilterBranch(f func(n Node) bool) {
 		delete(d.nodeEdges, n.Id)
 	}
 
-	// for _, n := range d.nodes {
-	// 	fmt.Printf("%#v\n", n)
-	// }
+	if d.Debug {
+		for _, n := range d.nodes {
+			if d.Debug {
+				log.Debugf("%#v", n)
+			}
+		}
+	}
 }
 
-func (d *DGraph) filterBranchAt(met map[int]struct{}, f func(n Node) bool, id int) bool {
+func (d *DGraph) treeShakeAt(met map[int]struct{}, f func(n Node) bool, id int) bool {
 	root := d.nodeMap[id]
+	if d.Debug {
+		log.Debugf("checking node: %#v", root)
+	}
+
 	if f(root) {
+		log.Debugf("root node match: %#v", root)
 		return true
 	}
+
 	for _, ne := range d.neighbours[id] {
 		if _, ok := met[ne]; ok {
 			continue
@@ -137,10 +153,17 @@ func (d *DGraph) filterBranchAt(met map[int]struct{}, f func(n Node) bool, id in
 		met[ne] = struct{}{}
 		n := d.nodeMap[ne]
 		if f(n) {
+			if d.Debug {
+				log.Debugf("dependent node match: %#v", n)
+			}
 			return true
 		}
-		// fmt.Printf("node not match: %#v\n", n)
-		if d.filterBranchAt(met, f, ne) {
+
+		if d.Debug {
+			log.Debugf("dependent node not match: %#v", n)
+		}
+
+		if d.treeShakeAt(met, f, ne) {
 			return true
 		}
 	}
@@ -279,6 +302,7 @@ func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 	d.RankSep = "0.5"
 	d.Ratio = "auto"
 	d.Pad = "0.3"
+	d.DisplayId = true
 	if err := d.build(); err != nil {
 		return nil, err
 	}
@@ -331,7 +355,6 @@ func DotGen(g *DGraph, p DotGenParam) error {
 	}
 
 	cmd := exec.Command("bash", "-c", fmt.Sprintf("dot -Tsvg \"%s\" > \"%s\"", p.GraphOutputFile, p.GraphSvgFile))
-	// fmt.Printf("%v", cmd)
 
 	cmdout, err := cmd.CombinedOutput()
 	if err != nil {
