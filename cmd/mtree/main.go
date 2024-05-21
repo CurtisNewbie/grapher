@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	FlagFile   = flag.String("file", "", "mvn dependency:tree output file")
-	FlagFilter = flag.String("filter", "", "filter tree branches by label name for tree-shaking")
+	FlagFile    = flag.String("file", "", "mvn dependency:tree output file")
+	FlagFilter  = flag.String("filter", "", "filter tree branches by label name for tree-shaking")
+	FlagCleanup = flag.Bool("cleanup", false, "whether should mtree cleanup generated output file when graph is finally generated")
 )
 
 func main() {
@@ -49,8 +50,11 @@ func main() {
 		g.TreeShake(func(n graph.Node) bool { return strings.Contains(n.Label, *FlagFilter) })
 	}
 
-	err = graph.DotGen(g, graph.DotGenParam{OpenViewer: true})
+	p, err := graph.DotGen(g, graph.DotGenParam{OpenSvg: true})
 	if err != nil {
 		panic(err)
+	}
+	if *FlagCleanup {
+		os.Remove(p.GraphOutputFile)
 	}
 }

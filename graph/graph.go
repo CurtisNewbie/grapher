@@ -315,7 +315,7 @@ const defaultGraphSvgName = "generated-graph.svg"
 type DotGenParam struct {
 	GraphSvgFile    string // graph svg file name
 	GraphOutputFile string // graph output name
-	OpenViewer      bool   // open generated graph template when finish
+	OpenSvg         bool   // open generated graph template when finish
 }
 
 // Use graphviz dot engine to generate graph svg file and host it in locally generated template.
@@ -323,7 +323,7 @@ type DotGenParam struct {
 // e.g., almost the same as the following:
 //
 //	dot -Tsvg $path > graph.svg && open graph.html
-func DotGen(g *DGraph, p DotGenParam) error {
+func DotGen(g *DGraph, p DotGenParam) (DotGenParam, error) {
 	if p.GraphSvgFile == "" {
 		p.GraphSvgFile = defaultGraphSvgName
 	}
@@ -333,26 +333,26 @@ func DotGen(g *DGraph, p DotGenParam) error {
 
 	of, err := ReadWriteFile(p.GraphOutputFile)
 	if err != nil {
-		return err
+		return p, err
 	}
 	defer of.Close()
 	of.Truncate(0)
 
 	if err := g.Draw(of); err != nil {
-		return err
+		return p, err
 	}
 
 	cmd := exec.Command("bash", "-c", fmt.Sprintf("dot -Tsvg \"%s\" > \"%s\"", p.GraphOutputFile, p.GraphSvgFile))
 
 	cmdout, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("dot failed, %v, %v", string(cmdout), err)
+		return p, fmt.Errorf("dot failed, %v, %v", string(cmdout), err)
 	}
 
-	if p.OpenViewer {
+	if p.OpenSvg {
 		TermOpenUrl(p.GraphSvgFile)
 	}
-	return nil
+	return p, nil
 }
 
 func TermOpenUrl(url string) error {

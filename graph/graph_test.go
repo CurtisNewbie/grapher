@@ -36,7 +36,7 @@ func TestDGraph(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := DotGen(graph, DotGenParam{OpenViewer: true}); err != nil {
+	if _, err := DotGen(graph, DotGenParam{OpenSvg: true}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -64,7 +64,7 @@ func TestDGraphTreeShake(t *testing.T) {
 
 	g.TreeShake(func(n Node) bool { return !strings.Contains(n.Label, "-") })
 
-	if err := DotGen(g, DotGenParam{OpenViewer: true}); err != nil {
+	if _, err := DotGen(g, DotGenParam{OpenSvg: true}); err != nil {
 		t.Fatal(err)
 	}
 }
