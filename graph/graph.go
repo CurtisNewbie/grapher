@@ -2,9 +2,7 @@ package graph
 
 import (
 	"bytes"
-	_ "embed"
 	"fmt"
-	"html/template"
 	"io"
 	"os"
 	"os/exec"
@@ -142,7 +140,9 @@ func (d *DGraph) treeShakeAt(met map[int]struct{}, f func(n Node) bool, id int) 
 	}
 
 	if f(root) {
-		log.Debugf("root node match: %#v", root)
+		if d.Debug {
+			log.Debugf("root node match: %#v", root)
+		}
 		return true
 	}
 
@@ -309,21 +309,12 @@ func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 	return d, nil
 }
 
-//go:embed graph.html
-var graphTemplHtml []byte
-
 const defaultGraphOutputName = "generated-graph.txt"
-const defaultGraphTemplName = "graph-viewer.html"
 const defaultGraphSvgName = "generated-graph.svg"
-
-type TemplData struct {
-	SvgFile string
-}
 
 type DotGenParam struct {
 	GraphSvgFile    string // graph svg file name
 	GraphOutputFile string // graph output name
-	GraphViewerFile string // template file name
 	OpenViewer      bool   // open generated graph template when finish
 }
 
@@ -338,9 +329,6 @@ func DotGen(g *DGraph, p DotGenParam) error {
 	}
 	if p.GraphOutputFile == "" {
 		p.GraphOutputFile = defaultGraphOutputName
-	}
-	if p.GraphViewerFile == "" {
-		p.GraphViewerFile = defaultGraphTemplName
 	}
 
 	of, err := ReadWriteFile(p.GraphOutputFile)
@@ -361,25 +349,8 @@ func DotGen(g *DGraph, p DotGenParam) error {
 		return fmt.Errorf("dot failed, %v, %v", string(cmdout), err)
 	}
 
-	tplFile, err := ReadWriteFile(p.GraphViewerFile)
-	if err != nil {
-		return err
-	}
-	defer tplFile.Close()
-	tplFile.Truncate(0)
-
-	tmpl, err := template.New("").Parse(string(graphTemplHtml))
-	if err != nil {
-		panic(err)
-	}
-
-	dat := TemplData{SvgFile: p.GraphSvgFile}
-	if err := tmpl.Execute(tplFile, dat); err != nil {
-		return fmt.Errorf("failed to write %s template, %v", p.GraphViewerFile, err)
-	}
-
 	if p.OpenViewer {
-		TermOpenUrl(p.GraphViewerFile)
+		TermOpenUrl(p.GraphSvgFile)
 	}
 	return nil
 }
