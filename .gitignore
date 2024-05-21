@@ -1,3 +1,4 @@
 *.svg
 *.txt
-parser/**/graph.html
+graph-viewer.html
+.DS_Store

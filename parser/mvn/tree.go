@@ -12,16 +12,22 @@ func ParseMvnTree(title string, s string) (*graph.DGraph, error) {
 	seg := [][]string{}
 	{
 		inSeg := false
-		st := 0
-		ed := 0
-		for i, l := range lines {
+		se := []string{}
+		for _, l := range lines {
+			if !strings.HasPrefix(l, "[INFO]") {
+				continue
+			}
 			if !inSeg && strings.HasPrefix(l, "[INFO] --- dependency:") {
 				inSeg = true
-				st = i
+				continue
 			} else if inSeg && (strings.TrimSpace(l) == "[INFO]" || strings.HasPrefix(l, "[INFO] ----")) {
 				inSeg = false
-				ed = i
-				seg = append(seg, lines[st+1:ed])
+				seg = append(seg, se)
+				se = []string{}
+				continue
+			}
+			if inSeg {
+				se = append(se, l)
 			}
 		}
 	}
@@ -114,6 +120,7 @@ func ParseMvnTree(title string, s string) (*graph.DGraph, error) {
 						parents = parents[:len(parents)-1]
 					}
 
+					// log.Debugf("l: %v", l)
 					p := parents[len(parents)-1]
 					addDep(p, l)
 
