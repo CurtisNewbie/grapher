@@ -17,7 +17,7 @@ func TestParseMvnTree(t *testing.T) {
 		t.Fatal(err)
 	}
 	// g.FilterBranch(func(n graph.Node) bool { return strings.Contains(n.Label, "com.fasterxml") })
-	err = graph.DotGen(g)
+	err = graph.DotGen(g, graph.DotGenParam{OpenViewer: true})
 	if err != nil {
 		t.Fatal(err)
 	}

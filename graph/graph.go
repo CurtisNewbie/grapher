@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"html/template"
 	"io"
 	"os"
 	"os/exec"
@@ -117,8 +118,8 @@ func (d *DGraph) FilterBranch(f func(n Node) bool) {
 		delete(d.neighbours, n.Id)
 		delete(d.nodeMap, n.Id)
 		delete(d.nodeEdges, n.Id)
-
 	}
+
 	// for _, n := range d.nodes {
 	// 	fmt.Printf("%#v\n", n)
 	// }
@@ -287,17 +288,38 @@ func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 //go:embed graph.html
 var graphTemplHtml []byte
 
-const graphOutputName = "graph.txt"
-const graphTemplName = "graph.html"
-const graphSvgName = "graph.svg"
+const defaultGraphOutputName = "generated-graph.txt"
+const defaultGraphTemplName = "graph-viewer.html"
+const defaultGraphSvgName = "generated-graph.svg"
+
+type TemplData struct {
+	SvgFile string
+}
+
+type DotGenParam struct {
+	GraphSvgFile    string // graph svg file name
+	GraphOutputFile string // graph output name
+	GraphViewerFile string // template file name
+	OpenViewer      bool   // open generated graph template when finish
+}
 
 // Use graphviz dot engine to generate graph svg file and host it in locally generated template.
 //
-// e.g.,
+// e.g., almost the same as the following:
 //
 //	dot -Tsvg $path > graph.svg && open graph.html
-func DotGen(g *DGraph) error {
-	of, err := ReadWriteFile(graphOutputName)
+func DotGen(g *DGraph, p DotGenParam) error {
+	if p.GraphSvgFile == "" {
+		p.GraphSvgFile = defaultGraphSvgName
+	}
+	if p.GraphOutputFile == "" {
+		p.GraphOutputFile = defaultGraphOutputName
+	}
+	if p.GraphViewerFile == "" {
+		p.GraphViewerFile = defaultGraphTemplName
+	}
+
+	of, err := ReadWriteFile(p.GraphOutputFile)
 	if err != nil {
 		return err
 	}
@@ -308,23 +330,34 @@ func DotGen(g *DGraph) error {
 		return err
 	}
 
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("dot -Tsvg \"%s\" > \"%s\"", graphOutputName, graphSvgName))
+	cmd := exec.Command("bash", "-c", fmt.Sprintf("dot -Tsvg \"%s\" > \"%s\"", p.GraphOutputFile, p.GraphSvgFile))
 	// fmt.Printf("%v", cmd)
+
 	cmdout, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("dot failed, %v, %v", string(cmdout), err)
 	}
 
-	templ, err := ReadWriteFile(graphTemplName)
+	tplFile, err := ReadWriteFile(p.GraphViewerFile)
 	if err != nil {
 		return err
 	}
-	defer templ.Close()
-	templ.Truncate(0)
-	if _, err := templ.Write(graphTemplHtml); err != nil {
-		return fmt.Errorf("failed to write graph.html template, %v", err)
+	defer tplFile.Close()
+	tplFile.Truncate(0)
+
+	tmpl, err := template.New("").Parse(string(graphTemplHtml))
+	if err != nil {
+		panic(err)
 	}
-	TermOpenUrl("graph.html")
+
+	dat := TemplData{SvgFile: p.GraphSvgFile}
+	if err := tmpl.Execute(tplFile, dat); err != nil {
+		return fmt.Errorf("failed to write %s template, %v", p.GraphViewerFile, err)
+	}
+
+	if p.OpenViewer {
+		TermOpenUrl(p.GraphViewerFile)
+	}
 	return nil
 }
 
