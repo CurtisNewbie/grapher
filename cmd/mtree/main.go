@@ -50,10 +50,20 @@ func main() {
 		g.TreeShake(func(n graph.Node) bool { return strings.Contains(n.Label, *FlagFilter) })
 	}
 
-	p, err := graph.DotGen(g, graph.DotGenParam{OpenSvg: true})
+	dir := "/tmp"
+	tmpFile, err := os.CreateTemp(dir, "mtree-graph-*.svg")
 	if err != nil {
 		panic(err)
 	}
+	svgPath := tmpFile.Name()
+	tmpFile.Close()
+
+	p, err := graph.DotGen(g, graph.DotGenParam{OpenSvg: true, GraphSvgFile: svgPath})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Graph SVG generated at: %s\n", svgPath)
+
 	if *FlagCleanup {
 		os.Remove(p.GraphOutputFile)
 	}
