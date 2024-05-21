@@ -47,6 +47,8 @@ func ParseMvnTree(title string, s string) (*graph.DGraph, error) {
 			id++
 			v = &Entry{Name: l, Dependencies: []string{}, Layer: layer, Id: id}
 			nodeMap[l] = v
+		} else {
+			v.Layer = layer
 		}
 		return v
 	}
