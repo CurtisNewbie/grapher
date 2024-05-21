@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -17,16 +19,28 @@ var (
 
 func main() {
 	flag.Parse()
+	var dat []byte = nil
 	if *FlagFile == "" {
-		fmt.Println("Please specify output file")
+		pipe, err := io.ReadAll(os.Stdin)
+		if err != nil && !errors.Is(err, io.EOF) {
+			panic(err)
+		}
+		dat = pipe
+	}
+	if *FlagFile == "" && len(dat) < 1 {
+		fmt.Println("Please specify output file or pipe data into mtree")
 		return
 	}
 
-	ctn, err := os.ReadFile(*FlagFile)
-	if err != nil {
-		panic(err)
+	if *FlagFile != "" {
+		ctn, err := os.ReadFile(*FlagFile)
+		if err != nil {
+			panic(err)
+		}
+		dat = ctn
 	}
-	g, err := mvn.ParseMvnTree(fmt.Sprintf("dependency graph %s", *FlagFile), string(ctn))
+
+	g, err := mvn.ParseMvnTree(fmt.Sprintf("dependency graph %s", *FlagFile), string(dat))
 	if err != nil {
 		panic(err)
 	}
