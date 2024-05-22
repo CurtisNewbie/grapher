@@ -17,7 +17,7 @@ var (
 	FlagPom    = flag.String("pom", "", "maven pom file")
 	FlagFile   = flag.String("file", "", "mvn dependency:tree output file")
 	FlagFilter = flag.String("filter", "", "filter tree branches by label name for tree-shaking")
-	FlagFormat = flag.String("format", "svg", "file format, e.g., svg, png, etc.")
+	FlagFormat = flag.String("format", "png", "file format, e.g., svg, png, etc.")
 )
 
 func main() {
