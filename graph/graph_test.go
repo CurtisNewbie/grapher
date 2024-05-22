@@ -20,23 +20,28 @@ func TestDGraph(t *testing.T) {
 	edges = append(edges, DEdge{FromId: 4, ToId: 5})
 	edges = append(edges, DEdge{FromId: 5, ToId: 1})
 
-	graph, err := NewDGraph("mygraph", nodes, edges)
-	graph.DisplayId = true
+	g, err := NewDGraph("mygraph", nodes, edges)
+	g.DisplayId = true
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	vfmn := graph.FindNodeLike("vfm")
+	vfmn := g.FindNodeLike("vfm")
 	if len(vfmn) < 1 {
 		t.Fatal("should find vfm")
 	}
 
-	graph, err = graph.Subgraph(vfmn[0].Id)
+	g, err = g.Subgraph(vfmn[0].Id)
 	if err != nil {
 		t.Fatal(err)
 	}
+	g.Dpi = "300"
 
-	if _, err := DotGen(graph, DotGenParam{OpenSvg: true}); err != nil {
+	p, err := DotGen(g, DotGenParam{Format: "png"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := TermOpenUrl(p.GeneratedFile); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -64,7 +69,11 @@ func TestDGraphTreeShake(t *testing.T) {
 
 	g.TreeShake(func(n Node) bool { return !strings.Contains(n.Label, "-") })
 
-	if _, err := DotGen(g, DotGenParam{OpenSvg: true}); err != nil {
+	p, err := DotGen(g, DotGenParam{Format: "png"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := TermOpenUrl(p.GeneratedFile); err != nil {
 		t.Fatal(err)
 	}
 }

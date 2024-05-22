@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/curtisnewbie/grapher/graph"
@@ -13,32 +14,54 @@ import (
 )
 
 var (
-	FlagFile    = flag.String("file", "", "mvn dependency:tree output file")
-	FlagFilter  = flag.String("filter", "", "filter tree branches by label name for tree-shaking")
-	FlagCleanup = flag.Bool("cleanup", false, "whether should mtree cleanup generated output file when graph is finally generated")
+	FlagPom    = flag.String("pom", "", "maven pom file")
+	FlagFile   = flag.String("file", "", "mvn dependency:tree output file")
+	FlagFilter = flag.String("filter", "", "filter tree branches by label name for tree-shaking")
 )
 
 func main() {
 	flag.Parse()
-	var dat []byte = nil
-	if *FlagFile == "" {
-		pipe, err := io.ReadAll(os.Stdin)
-		if err != nil && !errors.Is(err, io.EOF) {
-			panic(err)
-		}
-		dat = pipe
-	}
-	if *FlagFile == "" && len(dat) < 1 {
-		fmt.Println("Please specify output file or pipe data into mtree")
-		return
-	}
 
+	var dat []byte = nil
+
+	// mvn dependency:tree output file
 	if *FlagFile != "" {
 		ctn, err := os.ReadFile(*FlagFile)
 		if err != nil {
 			panic(err)
 		}
 		dat = ctn
+	}
+
+	// stdin
+	if len(dat) < 1 {
+		fi, err := os.Stdin.Stat()
+		if err != nil {
+			panic(err)
+		}
+		if fi.Size() > 0 {
+			pipe, err := io.ReadAll(os.Stdin)
+			if err != nil && !errors.Is(err, io.EOF) {
+				panic(err)
+			}
+			dat = pipe
+		}
+	}
+
+	// pom
+	if len(dat) < 1 && *FlagPom != "" {
+		cmd := exec.Command("mvn", "dependency:tree", "-f", *FlagPom)
+		cmdout, err := cmd.CombinedOutput()
+		if err != nil {
+			panic(err)
+		}
+		dat = cmdout
+	}
+
+	if len(dat) < 1 {
+		fmt.Println("Has nothing to process")
+		flag.PrintDefaults()
+		return
 	}
 
 	g, err := mvn.ParseMvnTree(fmt.Sprintf("dependency graph %s", *FlagFile), string(dat))
@@ -58,13 +81,13 @@ func main() {
 	svgPath := tmpFile.Name()
 	tmpFile.Close()
 
-	p, err := graph.DotGen(g, graph.DotGenParam{OpenSvg: true, GraphSvgFile: svgPath})
+	p, err := graph.DotGen(g, graph.DotGenParam{GeneratedFile: svgPath})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Graph SVG generated at: %s\n", svgPath)
+	fmt.Printf("Graph file generated at: %s\n", p.GeneratedFile)
 
-	if *FlagCleanup {
-		os.Remove(p.GraphOutputFile)
+	if err := graph.TermOpenUrl(p.GeneratedFile); err != nil {
+		panic(err)
 	}
 }

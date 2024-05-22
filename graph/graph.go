@@ -40,7 +40,9 @@ type DGraph struct {
 	NodeSep   string
 	Ratio     string
 	Pad       string
-	Debug     bool
+	Dpi       string
+
+	Debug bool
 }
 
 func (d *DGraph) build() error {
@@ -249,6 +251,15 @@ func (d *DGraph) Connected(rootId int, targetId int) bool {
 	return false
 }
 
+func (d *DGraph) SDraw() (string, error) {
+	buf := bytes.Buffer{}
+	err := d.Draw(&buf)
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
 func (d *DGraph) Draw(w io.Writer) error {
 	if err := d.writeGraphAttr(w); err != nil {
 		return fmt.Errorf("failed to write graph attributes, %w", err)
@@ -283,6 +294,9 @@ func (d *DGraph) writeGraphAttr(w io.Writer) error {
 	b.WriteString(fmt.Sprintf("ranksep=%s\n", d.RankSep))
 	b.WriteString(fmt.Sprintf("nodesep=%s\n", d.NodeSep))
 	b.WriteString(fmt.Sprintf("ratio=\"%s\"\n", d.Ratio))
+	if d.Dpi != "" {
+		b.WriteString(fmt.Sprintf("dpi=\"%s\"\n", d.Dpi))
+	}
 	b.WriteString("constraint = false\n")
 	b.WriteString("overlap=false\n")
 	b.WriteString("fontname=\"Helvetica,Arial,sans-serif\"\n")
@@ -309,13 +323,9 @@ func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 	return d, nil
 }
 
-const defaultGraphOutputName = "generated-graph.txt"
-
 type DotGenParam struct {
-	GraphSvgFile    string // graph svg file name
-	GraphOutputFile string // graph output name
-	OpenSvg         bool   // open generated graph template when finish
-	Format          string // default: svg, e.g., svg, png
+	GeneratedFile string // generated graph file name
+	Format        string // default: svg, e.g., svg, png
 }
 
 // Use graphviz dot engine to generate graph svg file and host it in locally generated template.
@@ -327,44 +337,29 @@ func DotGen(g *DGraph, p DotGenParam) (DotGenParam, error) {
 	if p.Format == "" {
 		p.Format = "svg"
 	}
-	if p.GraphSvgFile == "" {
+	if p.GeneratedFile == "" {
 		dir := "/tmp"
 		tmpFile, err := os.CreateTemp(dir, "grapher-*."+p.Format)
 		if err != nil {
 			panic(err)
 		}
-		p.GraphSvgFile = tmpFile.Name()
+		p.GeneratedFile = tmpFile.Name()
 		tmpFile.Close()
 	}
-	if p.GraphOutputFile == "" {
-		p.GraphOutputFile = defaultGraphOutputName
-	}
 
-	of, err := ReadWriteFile(p.GraphOutputFile)
+	s, err := g.SDraw()
 	if err != nil {
 		return p, err
 	}
-	defer of.Close()
-	of.Truncate(0)
 
-	if err := g.Draw(of); err != nil {
-		return p, err
-	}
-
-	dpi := ""
-	if p.Format == "png" {
-		dpi = "-Gdpi=300"
-	}
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("dot -T%s %s \"%s\" > \"%s\"", p.Format, dpi, p.GraphOutputFile, p.GraphSvgFile))
+	cmd := exec.Command("bash", "-c", fmt.Sprintf("dot -T%s > \"%s\"", p.Format, p.GeneratedFile))
+	cmd.Stdin = bytes.NewReader([]byte(s))
 
 	cmdout, err := cmd.CombinedOutput()
 	if err != nil {
 		return p, fmt.Errorf("dot failed, %v, %v", string(cmdout), err)
 	}
 
-	if p.OpenSvg {
-		TermOpenUrl(p.GraphSvgFile)
-	}
 	return p, nil
 }
 
