@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"slices"
 	"strings"
 
 	"github.com/curtisnewbie/grapher/log"
@@ -26,16 +25,13 @@ type Node struct {
 	Tooltip string
 }
 
-// TODO we don't really need neightbours if we have nodeEdges.
-
 type DGraph struct {
 	title string
 	nodes []Node
 	edges []DEdge
 
-	nodeMap    map[int]Node    // id -> node
-	neighbours map[int][]int   // from_id -> to_id
-	nodeEdges  map[int][]DEdge // id -> edges
+	nodeMap   map[int]Node    // id -> node
+	nodeEdges map[int][]DEdge // id -> edges
 
 	DisplayId bool
 	RankSep   string
@@ -48,21 +44,18 @@ type DGraph struct {
 }
 
 func (d *DGraph) build() error {
-	d.neighbours = map[int][]int{}
+	neighbours := map[int]map[int]struct{}{}
 	d.nodeEdges = map[int][]DEdge{}
 	for _, n := range d.edges {
-		tids, ok := d.neighbours[n.FromId]
+		tids, ok := neighbours[n.FromId]
 		if ok {
-			i, found := slices.BinarySearch(tids, n.ToId)
+			_, found := tids[n.ToId]
 			if found {
 				return fmt.Errorf("found duplicate edges on id: %v to id: %v", n.FromId, n.ToId)
 			}
-			tids = append(tids, n.ToId)
-			copy(tids[i+1:], tids[i:])
-			tids[i] = n.ToId
-			d.neighbours[n.FromId] = tids
+			tids[n.ToId] = struct{}{}
 		} else {
-			d.neighbours[n.FromId] = []int{n.ToId}
+			neighbours[n.FromId] = map[int]struct{}{}
 		}
 
 		if ae, ok := d.nodeEdges[n.FromId]; ok {
@@ -123,7 +116,6 @@ func (d *DGraph) TreeShake(f func(n Node) bool) {
 		}
 		d.edges = cp
 		d.nodes = append(d.nodes[:i], d.nodes[i+1:]...)
-		delete(d.neighbours, n.Id)
 		delete(d.nodeMap, n.Id)
 		delete(d.nodeEdges, n.Id)
 	}
@@ -150,7 +142,8 @@ func (d *DGraph) treeShakeAt(met map[int]struct{}, f func(n Node) bool, id int) 
 		return true
 	}
 
-	for _, ne := range d.neighbours[id] {
+	for _, ed := range d.nodeEdges[id] {
+		ne := ed.ToId
 		if _, ok := met[ne]; ok {
 			continue
 		}
@@ -199,7 +192,8 @@ func (d *DGraph) Subgraph(rootId int) (*DGraph, error) {
 		parents = parents[:len(parents)-1]
 		edges = append(edges, d.nodeEdges[p.Id]...)
 
-		for _, c := range d.neighbours[p.Id] {
+		for _, ed := range d.nodeEdges[p.Id] {
+			c := ed.ToId
 			if _, ok := met[c]; ok {
 				continue
 			}
@@ -229,11 +223,12 @@ func (d *DGraph) Connected(rootId int, targetId int) bool {
 		queue = queue[:len(queue)-1]
 		met[pop] = struct{}{}
 
-		adj, ok := d.neighbours[pop]
+		adj, ok := d.nodeEdges[pop]
 		if !ok {
 			continue
 		}
-		for _, ad := range adj {
+		for _, ed := range adj {
+			ad := ed.ToId
 			if ad == targetId {
 				return true
 			}
@@ -265,22 +260,20 @@ func (d *DGraph) AddEdge(edge DEdge) bool {
 	if !ok {
 		return false
 	}
-	tids, ok := d.neighbours[fromId]
+	eds, ok := d.nodeEdges[fromId]
 	if !ok {
-		d.neighbours[fromId] = []int{toId}
 		edge := DEdge{FromId: fromId, ToId: toId}
 		d.edges = append(d.edges, edge)
 		d.nodeEdges[fromId] = []DEdge{edge}
 		return true
 	}
 
-	for _, id := range tids {
-		if id == toId {
+	for _, ed := range eds {
+		if ed.ToId == toId {
 			return false
 		}
 	}
 
-	d.neighbours[fromId] = append(tids, toId)
 	d.edges = append(d.edges, edge)
 	d.nodeEdges[fromId] = append(d.nodeEdges[fromId], edge)
 	return true
@@ -295,7 +288,6 @@ func (d *DGraph) AddNode(n Node) bool {
 	d.nodeMap[n.Id] = n
 	d.nodes = append(d.nodes, n)
 	d.nodeEdges[n.Id] = []DEdge{}
-	d.neighbours[n.Id] = []int{}
 	return true
 }
 
