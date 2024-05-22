@@ -329,7 +329,7 @@ func DotGen(g *DGraph, p DotGenParam) (DotGenParam, error) {
 	}
 	if p.GraphSvgFile == "" {
 		dir := "/tmp"
-		tmpFile, err := os.CreateTemp(dir, "mtree-graph-*."+p.Format)
+		tmpFile, err := os.CreateTemp(dir, "grapher-*."+p.Format)
 		if err != nil {
 			panic(err)
 		}
