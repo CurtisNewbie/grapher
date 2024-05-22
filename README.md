@@ -12,8 +12,11 @@ Usage of mtree:
         mvn dependency:tree output file
   -filter string
         filter tree branches by label name for tree-shaking
+  -format string
+        file format, e.g., svg, png, etc. (default "png")
   -pom string
         maven pom file
+
 ```
 
 For example,
