@@ -67,9 +67,37 @@ func TestDGraphTreeShake(t *testing.T) {
 	}
 	// g.Debug = true
 
+	if !g.Connected(1, 5) {
+		t.Fatal("1 -> 5 should be connected")
+	}
+
+	if g.Connected(3, 2) {
+		t.Fatal("3 -> 2 should not be connected")
+	}
+
 	g.TreeShake(func(n Node) bool { return !strings.Contains(n.Label, "-") })
 
 	p, err := DotGen(g, DotGenParam{Format: "png"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := TermOpenUrl(p.GeneratedFile); err != nil {
+		t.Fatal(err)
+	}
+
+	if !g.AddNode(Node{Id: 6, Label: "apple"}) {
+		t.Fatal("should add node 6")
+	}
+
+	if !g.Connect(3, 2) {
+		t.Fatal("Should connect 3 -> 2")
+	}
+
+	if !g.Connected(3, 2) {
+		t.Fatal("3 -> 2 should be connected")
+	}
+
+	p, err = DotGen(g, DotGenParam{Format: "png"})
 	if err != nil {
 		t.Fatal(err)
 	}

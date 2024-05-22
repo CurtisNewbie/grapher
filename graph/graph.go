@@ -26,6 +26,8 @@ type Node struct {
 	Tooltip string
 }
 
+// TODO we don't really need neightbours if we have nodeEdges.
+
 type DGraph struct {
 	title string
 	nodes []Node
@@ -215,15 +217,8 @@ func (d *DGraph) Subgraph(rootId int) (*DGraph, error) {
 }
 
 func (d *DGraph) Connected(rootId int, targetId int) bool {
-	var rootFound bool = false
-	var root Node
-	for _, n := range d.nodes {
-		if n.Id == rootId {
-			root = n
-			rootFound = true
-		}
-	}
-	if !rootFound {
+	root, ok := d.nodeMap[rootId]
+	if !ok {
 		return false
 	}
 
@@ -249,6 +244,59 @@ func (d *DGraph) Connected(rootId int, targetId int) bool {
 		}
 	}
 	return false
+}
+
+// Connect the two nodes, return true if a new directed edge is created else return false.
+//
+// When false is returned, these is already a directed edge connecting the two nodes.
+func (d *DGraph) Connect(fromId int, toId int) bool {
+	edge := DEdge{FromId: fromId, ToId: toId}
+	return d.AddEdge(edge)
+}
+
+// Connect the two nodes, return true if the new directed edge is added to the graph else return false.
+//
+// When false is returned, these is already a directed edge connecting the two nodes.
+func (d *DGraph) AddEdge(edge DEdge) bool {
+	fromId := edge.FromId
+	toId := edge.ToId
+
+	_, ok := d.nodeMap[fromId]
+	if !ok {
+		return false
+	}
+	tids, ok := d.neighbours[fromId]
+	if !ok {
+		d.neighbours[fromId] = []int{toId}
+		edge := DEdge{FromId: fromId, ToId: toId}
+		d.edges = append(d.edges, edge)
+		d.nodeEdges[fromId] = []DEdge{edge}
+		return true
+	}
+
+	for _, id := range tids {
+		if id == toId {
+			return false
+		}
+	}
+
+	d.neighbours[fromId] = append(tids, toId)
+	d.edges = append(d.edges, edge)
+	d.nodeEdges[fromId] = append(d.nodeEdges[fromId], edge)
+	return true
+}
+
+// Add node to graph, return false if the node.Id exist.
+func (d *DGraph) AddNode(n Node) bool {
+	_, ok := d.nodeMap[n.Id]
+	if ok {
+		return false
+	}
+	d.nodeMap[n.Id] = n
+	d.nodes = append(d.nodes, n)
+	d.nodeEdges[n.Id] = []DEdge{}
+	d.neighbours[n.Id] = []int{}
+	return true
 }
 
 func (d *DGraph) SDraw() (string, error) {
