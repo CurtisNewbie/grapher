@@ -30,7 +30,3 @@ mvn dependency:tree | mtree -file tree.out
 # let mtree obtain output of dependency:tree directly
 mtree -pom myproject
 ```
-
-Demo:
-
-<img src="demo/grapher-todo-demo.png" height="300px" />
