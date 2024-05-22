@@ -351,7 +351,11 @@ func DotGen(g *DGraph, p DotGenParam) (DotGenParam, error) {
 		return p, err
 	}
 
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("dot -T%s \"%s\" > \"%s\"", p.Format, p.GraphOutputFile, p.GraphSvgFile))
+	dpi := ""
+	if p.Format == "png" {
+		dpi = "-Gdpi=300"
+	}
+	cmd := exec.Command("bash", "-c", fmt.Sprintf("dot -T%s %s \"%s\" > \"%s\"", p.Format, dpi, p.GraphOutputFile, p.GraphSvgFile))
 
 	cmdout, err := cmd.CombinedOutput()
 	if err != nil {
