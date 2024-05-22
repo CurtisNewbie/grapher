@@ -17,6 +17,7 @@ var (
 	FlagPom    = flag.String("pom", "", "maven pom file")
 	FlagFile   = flag.String("file", "", "mvn dependency:tree output file")
 	FlagFilter = flag.String("filter", "", "filter tree branches by label name for tree-shaking")
+	FlagFormat = flag.String("format", "svg", "file format, e.g., svg, png, etc.")
 )
 
 func main() {
@@ -73,15 +74,13 @@ func main() {
 		g.TreeShake(func(n graph.Node) bool { return strings.Contains(n.Label, *FlagFilter) })
 	}
 
-	dir := "/tmp"
-	tmpFile, err := os.CreateTemp(dir, "mtree-graph-*.svg")
-	if err != nil {
-		panic(err)
+	if *FlagFormat != "svg" {
+		g.Dpi = "150"
 	}
-	svgPath := tmpFile.Name()
-	tmpFile.Close()
 
-	p, err := graph.DotGen(g, graph.DotGenParam{GeneratedFile: svgPath})
+	p, err := graph.DotGen(g, graph.DotGenParam{
+		Format: *FlagFormat,
+	})
 	if err != nil {
 		panic(err)
 	}
