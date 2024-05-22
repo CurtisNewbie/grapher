@@ -310,12 +310,12 @@ func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 }
 
 const defaultGraphOutputName = "generated-graph.txt"
-const defaultGraphSvgName = "generated-graph.svg"
 
 type DotGenParam struct {
 	GraphSvgFile    string // graph svg file name
 	GraphOutputFile string // graph output name
 	OpenSvg         bool   // open generated graph template when finish
+	Format          string // default: svg, e.g., svg, png
 }
 
 // Use graphviz dot engine to generate graph svg file and host it in locally generated template.
@@ -324,8 +324,17 @@ type DotGenParam struct {
 //
 //	dot -Tsvg $path > graph.svg && open graph.html
 func DotGen(g *DGraph, p DotGenParam) (DotGenParam, error) {
+	if p.Format == "" {
+		p.Format = "svg"
+	}
 	if p.GraphSvgFile == "" {
-		p.GraphSvgFile = defaultGraphSvgName
+		dir := "/tmp"
+		tmpFile, err := os.CreateTemp(dir, "mtree-graph-*."+p.Format)
+		if err != nil {
+			panic(err)
+		}
+		p.GraphSvgFile = tmpFile.Name()
+		tmpFile.Close()
 	}
 	if p.GraphOutputFile == "" {
 		p.GraphOutputFile = defaultGraphOutputName
@@ -342,7 +351,7 @@ func DotGen(g *DGraph, p DotGenParam) (DotGenParam, error) {
 		return p, err
 	}
 
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("dot -Tsvg \"%s\" > \"%s\"", p.GraphOutputFile, p.GraphSvgFile))
+	cmd := exec.Command("bash", "-c", fmt.Sprintf("dot -T%s \"%s\" > \"%s\"", p.Format, p.GraphOutputFile, p.GraphSvgFile))
 
 	cmdout, err := cmd.CombinedOutput()
 	if err != nil {
