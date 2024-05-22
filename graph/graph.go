@@ -368,11 +368,11 @@ type DotGenParam struct {
 	Format        string // default: svg, e.g., svg, png
 }
 
-// Use graphviz dot engine to generate graph svg file and host it in locally generated template.
+// Use graphviz dot engine to generate graph file (e.g., svg, png).
 //
 // e.g., almost the same as the following:
 //
-//	dot -Tsvg $path > graph.svg && open graph.html
+//	dot -Tsvg $path > graph.svg && open graph.svg
 func DotGen(g *DGraph, p DotGenParam) (DotGenParam, error) {
 	if p.Format == "" {
 		p.Format = "svg"
