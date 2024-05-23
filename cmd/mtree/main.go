@@ -75,9 +75,10 @@ func main() {
 	if *FlagFilter != "" {
 		g.TreeShake(func(n graph.Node) bool { return strings.Contains(n.Label, *FlagFilter) })
 	}
+	fmt.Printf("Graph built, total %d nodes, %d edges\n", g.NodeCount(), g.EdgeCount())
 
 	if *FlagFormat != "svg" {
-		g.Dpi = "150"
+		g.Dpi = "300"
 	}
 
 	p, err := graph.DotGen(g, graph.DotGenParam{

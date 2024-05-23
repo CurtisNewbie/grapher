@@ -346,6 +346,14 @@ func (d *DGraph) writeGraphAttr(w io.Writer) error {
 	return err
 }
 
+func (d *DGraph) NodeCount() int {
+	return len(d.nodes)
+}
+
+func (d *DGraph) EdgeCount() int {
+	return len(d.edges)
+}
+
 func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 	d := new(DGraph)
 	d.title = title
