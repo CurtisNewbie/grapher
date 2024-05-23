@@ -41,7 +41,8 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		if fi.Size() > 0 {
+		if (fi.Mode() & os.ModeCharDevice) == 0 {
+			fmt.Println("Reading from stdin")
 			pipe, err := io.ReadAll(os.Stdin)
 			if err != nil && !errors.Is(err, io.EOF) {
 				panic(err)
