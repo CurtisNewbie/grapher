@@ -76,6 +76,7 @@ func TestDGraphTreeShake(t *testing.T) {
 	if g.Connected(3, 2) {
 		t.Fatal("3 -> 2 should not be connected")
 	}
+	g.Dpi = "300"
 
 	g.TreeShake(func(n Node) bool { return !strings.Contains(n.Label, "-") })
 

@@ -12,6 +12,7 @@ import (
 	"github.com/curtisnewbie/grapher/graph"
 	"github.com/curtisnewbie/grapher/parser/mvn"
 	"github.com/curtisnewbie/grapher/sys"
+	"github.com/spf13/cast"
 )
 
 var (
@@ -19,6 +20,7 @@ var (
 	FlagFile   = flag.String("file", "", "mvn dependency:tree output file")
 	FlagFilter = flag.String("filter", "", "filter tree branches by label name for tree-shaking")
 	FlagFormat = flag.String("format", "png", "file format, e.g., svg, png, etc.")
+	FlagDpi    = flag.String("dpi", "", "dpi")
 )
 
 func main() {
@@ -75,11 +77,20 @@ func main() {
 	if *FlagFilter != "" {
 		g.TreeShake(func(n graph.Node) bool { return strings.Contains(n.Label, *FlagFilter) })
 	}
-	fmt.Printf("Graph built, total %d nodes, %d edges\n", g.NodeCount(), g.EdgeCount())
 
+	g.Dpi = *FlagDpi
 	if *FlagFormat != "svg" {
-		g.Dpi = "300"
+		if g.Dpi == "" {
+			if g.NodeCount() > 50 {
+				exp := int(g.NodeCount() / 50)
+				g.Dpi = cast.ToString(exp * 300)
+			} else {
+				g.Dpi = "300"
+			}
+		}
 	}
+
+	fmt.Printf("Graph built, dpi: %s, total %d nodes, %d edges\n", g.Dpi, g.NodeCount(), g.EdgeCount())
 
 	p, err := graph.DotGen(g, graph.DotGenParam{
 		Format: *FlagFormat,

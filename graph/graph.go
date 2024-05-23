@@ -329,16 +329,21 @@ func (d *DGraph) Draw(w io.Writer) error {
 func (d *DGraph) writeGraphAttr(w io.Writer) error {
 	b := bytes.Buffer{}
 	b.WriteString(fmt.Sprintf("digraph \"[%v]\" {\n", d.title))
-	b.WriteString(fmt.Sprintf("pad=%s\n", d.Pad))
-	b.WriteString(fmt.Sprintf("ranksep=%s\n", d.RankSep))
-	b.WriteString(fmt.Sprintf("nodesep=%s\n", d.NodeSep))
-	b.WriteString(fmt.Sprintf("ratio=\"%s\"\n", d.Ratio))
+	graphAttr := []string{}
+	graphAttr = append(graphAttr, fmt.Sprintf("pad=%s", d.Pad))
+	graphAttr = append(graphAttr, fmt.Sprintf("ranksep=%s", d.RankSep))
+	graphAttr = append(graphAttr, fmt.Sprintf("nodesep=%s", d.NodeSep))
+	graphAttr = append(graphAttr, fmt.Sprintf("ratio=\"%s\"", d.Ratio))
 	if d.Dpi != "" {
-		b.WriteString(fmt.Sprintf("dpi=\"%s\"\n", d.Dpi))
+		graphAttr = append(graphAttr, fmt.Sprintf("dpi=\"%s\"", d.Dpi))
 	}
-	b.WriteString("constraint=false\n")
-	b.WriteString("overlap=false\n")
-	b.WriteString("fontname=\"Helvetica,Arial,sans-serif\"\n")
+	graphAttr = append(graphAttr, "constraint=false")
+	graphAttr = append(graphAttr, "overlap=false")
+	graphAttr = append(graphAttr, "fontname=\"Helvetica,Arial,sans-serif\"")
+	if len(graphAttr) > 0 {
+		b.WriteString(fmt.Sprintf("graph [%s]\n", strings.Join(graphAttr, ", ")))
+	}
+
 	b.WriteString("node [fontname=\"Helvetica,Arial,sans-serif\"]\n")
 	b.WriteString("edge [fontname=\"Helvetica,Arial,sans-serif\"]\n")
 	b.WriteString("node [style=filled fillcolor=\"#f8f8f8\"]\n")
