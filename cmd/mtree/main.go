@@ -12,7 +12,6 @@ import (
 	"github.com/curtisnewbie/grapher/graph"
 	"github.com/curtisnewbie/grapher/parser/mvn"
 	"github.com/curtisnewbie/grapher/sys"
-	"github.com/spf13/cast"
 )
 
 var (
@@ -79,17 +78,6 @@ func main() {
 	}
 
 	g.Dpi = *FlagDpi
-	if *FlagFormat != "svg" {
-		if g.Dpi == "" {
-			if g.NodeCount() > 50 {
-				exp := int(g.NodeCount() / 50)
-				g.Dpi = cast.ToString(exp * 300)
-			} else {
-				g.Dpi = "300"
-			}
-		}
-	}
-
 	fmt.Printf("Graph built, dpi: %s, total %d nodes, %d edges\n", g.Dpi, g.NodeCount(), g.EdgeCount())
 
 	p, err := graph.DotGen(g, graph.DotGenParam{

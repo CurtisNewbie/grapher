@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/curtisnewbie/grapher/log"
+	"github.com/spf13/cast"
 )
 
 type DEdge struct {
@@ -376,8 +377,9 @@ func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 }
 
 type DotGenParam struct {
-	GeneratedFile string // generated graph file name
-	Format        string // default: svg, e.g., svg, png
+	GeneratedFile    string // generated graph file name
+	Format           string // default: svg, e.g., svg, png
+	DisableAutoScale bool
 }
 
 // Use graphviz dot engine to generate graph file (e.g., svg, png).
@@ -397,6 +399,15 @@ func DotGen(g *DGraph, p DotGenParam) (DotGenParam, error) {
 		}
 		p.GeneratedFile = tmpFile.Name()
 		tmpFile.Close()
+	}
+
+	if !p.DisableAutoScale && p.Format != "svg" && g.Dpi == "" {
+		if g.NodeCount() > 50 {
+			exp := int(g.NodeCount() / 50)
+			g.Dpi = cast.ToString(exp * 300)
+		} else {
+			g.Dpi = "300"
+		}
 	}
 
 	s, err := g.SDraw()
