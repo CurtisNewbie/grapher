@@ -39,3 +39,10 @@ func (n *KNodeBuilder) Nodes() []Node {
 	}
 	return nodes
 }
+
+func NewKNodeBuilder() KNodeBuilder {
+	return KNodeBuilder{
+		idCnt:      0,
+		keyedNodes: map[string]Node{},
+	}
+}
