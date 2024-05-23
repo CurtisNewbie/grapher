@@ -21,15 +21,15 @@ func (n *KNodeBuilder) Find(k string) (Node, bool) {
 // If the key exists, the previous node is returned instead of the given node.
 //
 // If the key doesn't exist, the given node is assigned a id and added to the builder.
-func (n *KNodeBuilder) Add(k string, node Node) Node {
+func (n *KNodeBuilder) Add(k string, node Node) (Node, bool) {
 	v, ok := n.keyedNodes[k]
 	if ok {
-		return v
+		return v, false
 	}
 	n.idCnt++
 	node.Id = n.idCnt
 	n.keyedNodes[k] = node
-	return node
+	return node, true
 }
 
 func (n *KNodeBuilder) Nodes() []Node {
