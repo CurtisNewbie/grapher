@@ -1,13 +1,20 @@
 package graph
 
+import "github.com/curtisnewbie/grapher/datastruct"
+
 // Builder that manages keys, nodes and ids.
-type KNodeBuilder struct {
+type KNodeGraphBuilder struct {
 	idCnt      int
 	keyedNodes map[string]Node
+	keyedEdges map[string]datastruct.Set[string]
 }
 
-func (n *KNodeBuilder) Find(k string) (Node, bool) {
-	v, ok := n.keyedNodes[k]
+func (b *KNodeGraphBuilder) BuildDGraph(title string) (*DGraph, error) {
+	return NewDGraph(title, b.Nodes(), b.Edges())
+}
+
+func (b *KNodeGraphBuilder) Find(k string) (Node, bool) {
+	v, ok := b.keyedNodes[k]
 	if ok {
 		return v, true
 	}
@@ -21,28 +28,59 @@ func (n *KNodeBuilder) Find(k string) (Node, bool) {
 // If the key exists, the previous node is returned instead of the given node.
 //
 // If the key doesn't exist, the given node is assigned a id and added to the builder.
-func (n *KNodeBuilder) Add(k string, node Node) (Node, bool) {
-	v, ok := n.keyedNodes[k]
+func (b *KNodeGraphBuilder) Add(k string, node Node) (Node, bool) {
+	v, ok := b.keyedNodes[k]
 	if ok {
 		return v, false
 	}
-	n.idCnt++
-	node.Id = n.idCnt
-	n.keyedNodes[k] = node
+	b.idCnt++
+	node.Id = b.idCnt
+	b.keyedNodes[k] = node
 	return node, true
 }
 
-func (n *KNodeBuilder) Nodes() []Node {
-	nodes := make([]Node, 0, len(n.keyedNodes))
-	for k := range n.keyedNodes {
-		nodes = append(nodes, n.keyedNodes[k])
+func (b *KNodeGraphBuilder) Connect(k1 string, k2 string) {
+	s, ok := b.keyedEdges[k1]
+	if ok {
+		s.Add(k2)
+	} else {
+		s = datastruct.NewSet[string]()
+		s.Add(k2)
+		b.keyedEdges[k1] = s
+	}
+}
+
+func (b *KNodeGraphBuilder) Nodes() []Node {
+	nodes := make([]Node, 0, len(b.keyedNodes))
+	for k := range b.keyedNodes {
+		nodes = append(nodes, b.keyedNodes[k])
 	}
 	return nodes
 }
 
-func NewKNodeBuilder() KNodeBuilder {
-	return KNodeBuilder{
+func (b *KNodeGraphBuilder) Edges() []DEdge {
+	edges := make([]DEdge, 0, len(b.keyedEdges))
+	for k, ed := range b.keyedEdges {
+		kn, ok := b.Find(k)
+		if !ok {
+			continue
+		}
+		// k -> nb
+		for _, nb := range ed.CopyKeys() {
+			nn, ok := b.Find(nb)
+			if !ok {
+				continue
+			}
+			edges = append(edges, DEdge{FromId: kn.Id, ToId: nn.Id})
+		}
+	}
+	return edges
+}
+
+func NewKNodeGraphBuilder() KNodeGraphBuilder {
+	return KNodeGraphBuilder{
 		idCnt:      0,
 		keyedNodes: map[string]Node{},
+		keyedEdges: map[string]datastruct.Set[string]{},
 	}
 }
