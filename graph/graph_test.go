@@ -3,6 +3,8 @@ package graph
 import (
 	"strings"
 	"testing"
+
+	"github.com/curtisnewbie/grapher/sys"
 )
 
 func TestDGraph(t *testing.T) {
@@ -41,7 +43,7 @@ func TestDGraph(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := TermOpenUrl(p.GeneratedFile); err != nil {
+	if err := sys.TermOpenUrl(p.GeneratedFile); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -81,7 +83,7 @@ func TestDGraphTreeShake(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := TermOpenUrl(p.GeneratedFile); err != nil {
+	if err := sys.TermOpenUrl(p.GeneratedFile); err != nil {
 		t.Fatal(err)
 	}
 
@@ -101,7 +103,7 @@ func TestDGraphTreeShake(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := TermOpenUrl(p.GeneratedFile); err != nil {
+	if err := sys.TermOpenUrl(p.GeneratedFile); err != nil {
 		t.Fatal(err)
 	}
 }

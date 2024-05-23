@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/curtisnewbie/grapher/graph"
+	"github.com/curtisnewbie/grapher/sys"
 )
 
 func TestParseMvnTree(t *testing.T) {
@@ -21,7 +22,7 @@ func TestParseMvnTree(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := graph.TermOpenUrl(p.GeneratedFile); err != nil {
+	if err := sys.TermOpenUrl(p.GeneratedFile); err != nil {
 		t.Fatal(err)
 	}
 }

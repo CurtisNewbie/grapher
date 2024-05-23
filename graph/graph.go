@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 
 	"github.com/curtisnewbie/grapher/log"
@@ -337,7 +336,7 @@ func (d *DGraph) writeGraphAttr(w io.Writer) error {
 	if d.Dpi != "" {
 		b.WriteString(fmt.Sprintf("dpi=\"%s\"\n", d.Dpi))
 	}
-	b.WriteString("constraint = false\n")
+	b.WriteString("constraint=false\n")
 	b.WriteString("overlap=false\n")
 	b.WriteString("fontname=\"Helvetica,Arial,sans-serif\"\n")
 	b.WriteString("node [fontname=\"Helvetica,Arial,sans-serif\"]\n")
@@ -372,7 +371,7 @@ type DotGenParam struct {
 //
 // e.g., almost the same as the following:
 //
-//	dot -Tsvg $path > graph.svg && open graph.svg
+//	... | dot -Tsvg > graph.svg && open graph.svg
 func DotGen(g *DGraph, p DotGenParam) (DotGenParam, error) {
 	if p.Format == "" {
 		p.Format = "svg"
@@ -401,31 +400,4 @@ func DotGen(g *DGraph, p DotGenParam) (DotGenParam, error) {
 	}
 
 	return p, nil
-}
-
-func TermOpenUrl(url string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default:
-		cmd = "xdg-open"
-	}
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
-}
-
-// Open file with 0666 permission.
-func OpenFile(name string, flag int) (*os.File, error) {
-	return os.OpenFile(name, flag, 0666)
-}
-
-// Create readable & writable file with 0666 permission.
-func ReadWriteFile(name string) (*os.File, error) {
-	return OpenFile(name, os.O_CREATE|os.O_RDWR)
 }

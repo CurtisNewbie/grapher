@@ -11,6 +11,7 @@ import (
 
 	"github.com/curtisnewbie/grapher/graph"
 	"github.com/curtisnewbie/grapher/parser/mvn"
+	"github.com/curtisnewbie/grapher/sys"
 )
 
 var (
@@ -86,7 +87,7 @@ func main() {
 	}
 	fmt.Printf("Graph file generated at: %s\n", p.GeneratedFile)
 
-	if err := graph.TermOpenUrl(p.GeneratedFile); err != nil {
+	if err := sys.TermOpenUrl(p.GeneratedFile); err != nil {
 		panic(err)
 	}
 }
