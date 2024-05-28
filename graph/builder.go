@@ -2,8 +2,6 @@ package graph
 
 import (
 	"sync"
-
-	"github.com/curtisnewbie/grapher/datastruct"
 )
 
 // Builder that manages keys, nodes and ids.
@@ -13,7 +11,7 @@ type KNodeGraphBuilder struct {
 	mu         sync.RWMutex
 	idCnt      int
 	keyedNodes map[string]Node
-	keyedEdges map[string]datastruct.Set[string]
+	keyedEdges map[string]map[string]string
 }
 
 func (b *KNodeGraphBuilder) BuildDGraph(title string) (*DGraph, error) {
@@ -56,17 +54,26 @@ func (b *KNodeGraphBuilder) Add(k string, node Node) (Node, bool) {
 	return node, true
 }
 
-func (b *KNodeGraphBuilder) Connect(k1 string, k2 string) {
+func (b *KNodeGraphBuilder) SConnect(k1 string, k2 string, label string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	s, ok := b.keyedEdges[k1]
 	if ok {
-		s.Add(k2)
+		{
+			_, ok1 := s[k2]
+			if !ok1 || label != "" {
+				s[k2] = label
+			}
+		}
 	} else {
-		s = datastruct.NewSet[string]()
-		s.Add(k2)
+		s = map[string]string{}
+		s[k2] = label
 		b.keyedEdges[k1] = s
 	}
+}
+
+func (b *KNodeGraphBuilder) Connect(k1 string, k2 string) {
+	b.SConnect(k1, k2, "")
 }
 
 func (b *KNodeGraphBuilder) Nodes() []Node {
@@ -97,12 +104,12 @@ func (b *KNodeGraphBuilder) _edges() []DEdge {
 			continue
 		}
 		// k -> nb
-		for _, nb := range ed.CopyKeys() {
+		for nb, edgeLabel := range ed {
 			nn, ok := b._find(nb)
 			if !ok {
 				continue
 			}
-			edges = append(edges, DEdge{FromId: kn.Id, ToId: nn.Id})
+			edges = append(edges, DEdge{FromId: kn.Id, ToId: nn.Id, Label: edgeLabel})
 		}
 	}
 	return edges
@@ -112,6 +119,6 @@ func NewKNodeGraphBuilder() KNodeGraphBuilder {
 	return KNodeGraphBuilder{
 		idCnt:      0,
 		keyedNodes: map[string]Node{},
-		keyedEdges: map[string]datastruct.Set[string]{},
+		keyedEdges: map[string]map[string]string{},
 	}
 }

@@ -17,6 +17,8 @@ func TestKNodeGraphBuilder(t *testing.T) {
 	bu.Connect("uvault", "vfm")
 	bu.Connect("fstore", "uvault")
 	bu.Connect("uvault", "wtf")
+	bu.SConnect("fstore", "uvault", "fstore reads user info")
+	bu.SConnect("fstore", "uvault", "")
 
 	g, err := bu.BuildDGraph("test")
 	if err != nil {
