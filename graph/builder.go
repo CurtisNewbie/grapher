@@ -54,6 +54,17 @@ func (b *KNodeGraphBuilder) Add(k string, node Node) (Node, bool) {
 	return node, true
 }
 
+// Attempt to add node to builder using the given key.
+//
+// Node.Id is always ignored.
+//
+// If the key exists, the previous node is returned instead of the given node.
+//
+// If the key doesn't exist, the given node is assigned a id and added to the builder.
+func (b *KNodeGraphBuilder) SAdd(k string, label string) (Node, bool) {
+	return b.Add(k, Node{Label: label})
+}
+
 func (b *KNodeGraphBuilder) SConnect(k1 string, k2 string, label string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
