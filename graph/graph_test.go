@@ -37,7 +37,14 @@ func TestDGraph(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	g.Dpi = "300"
+
+	s, err := g.SDraw()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("s: %v", s)
 
 	p, err := DotGen(g, DotGenParam{Format: "png"})
 	if err != nil {

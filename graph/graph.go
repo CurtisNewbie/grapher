@@ -9,7 +9,28 @@ import (
 	"strings"
 
 	"github.com/curtisnewbie/grapher/log"
+	"github.com/curtisnewbie/grapher/sys"
 	"github.com/spf13/cast"
+)
+
+const (
+	defaultRankSep = "0.5"
+	defaultNodeSep = "0.5"
+	defaultRatio   = "auto"
+	defaultPad     = "0.3"
+
+	LayoutDot   = "dot"
+	LayoutNeato = "neato"
+	LayoutFdp   = "fdp"
+	LayoutSfdp  = "sfdp"
+	LayoutCirco = "circo"
+
+	ShapeBox     = "box"
+	ShapePoint   = "point"
+	ShapeSquare  = "square"
+	ShapeCircle  = "circle"
+	ShapeNote    = "note"
+	ShapeDiamond = "diamond"
 )
 
 type DEdge struct {
@@ -23,6 +44,7 @@ type Node struct {
 	Id      int
 	Label   string
 	Tooltip string
+	Shape   string
 }
 
 type DGraph struct {
@@ -33,12 +55,16 @@ type DGraph struct {
 	nodeMap   map[int]Node    // id -> node
 	nodeEdges map[int][]DEdge // id -> edges
 
-	DisplayId bool
-	RankSep   string
-	NodeSep   string
-	Ratio     string
-	Pad       string
-	Dpi       string
+	// layout engine, by default it's dot, it can also be circo, fdp, neato, etc.
+	//
+	// https://graphviz.org/docs/layouts/
+	Layout    string
+	DisplayId bool   // display id in node's label, by default it's true.
+	RankSep   string // ranksep, by default it's 0.5.
+	NodeSep   string // nodesep, by default it's 0.5.
+	Ratio     string // ratio, by default it's 'auto'.
+	Pad       string // padding of the graph, by default its' 0.3.
+	Dpi       string // e.g., 300, higher is better, by default it's empty.
 
 	Debug bool
 }
@@ -311,8 +337,12 @@ func (d *DGraph) Draw(w io.Writer) error {
 		if d.DisplayId {
 			label = fmt.Sprintf("%d. %s", n.Id, n.Label)
 		}
-		buf.WriteString(fmt.Sprintf("N%v [label=\"%v\" id=\"node%v\" fontsize=8 shape=box tooltip=\"%v\" color=\"#b20400\" fillcolor=\"#edd6d5\"]\n",
-			n.Id, label, n.Id, n.Tooltip))
+		shape := n.Shape
+		if shape == "" {
+			shape = ShapeBox
+		}
+		buf.WriteString(fmt.Sprintf("N%v [label=\"%v\" id=\"node%v\" fontsize=8 shape=%s tooltip=\"%v\" color=\"#b20400\" fillcolor=\"#edd6d5\"]\n",
+			n.Id, label, n.Id, shape, n.Tooltip))
 	}
 
 	for _, ed := range d.edges {
@@ -331,6 +361,12 @@ func (d *DGraph) writeGraphAttr(w io.Writer) error {
 	b := bytes.Buffer{}
 	b.WriteString(fmt.Sprintf("digraph \"[%v]\" {\n", d.title))
 	graphAttr := []string{}
+
+	engine := d.Layout
+	if engine == "" {
+		engine = "dot"
+	}
+	graphAttr = append(graphAttr, fmt.Sprintf("layout=%s", engine))
 	graphAttr = append(graphAttr, fmt.Sprintf("pad=%s", d.Pad))
 	graphAttr = append(graphAttr, fmt.Sprintf("ranksep=%s", d.RankSep))
 	graphAttr = append(graphAttr, fmt.Sprintf("nodesep=%s", d.NodeSep))
@@ -365,11 +401,12 @@ func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 	d.title = title
 	d.nodes = nodes
 	d.edges = edges
-	d.NodeSep = "0.5"
-	d.RankSep = "0.5"
-	d.Ratio = "auto"
-	d.Pad = "0.3"
+	d.NodeSep = defaultNodeSep
+	d.RankSep = defaultRankSep
+	d.Ratio = defaultRatio
+	d.Pad = defaultPad
 	d.DisplayId = true
+	d.Layout = LayoutDot
 	if err := d.build(); err != nil {
 		return nil, err
 	}
@@ -377,8 +414,8 @@ func NewDGraph(title string, nodes []Node, edges []DEdge) (*DGraph, error) {
 }
 
 type DotGenParam struct {
-	GeneratedFile    string // generated graph file name
-	Format           string // default: svg, e.g., svg, png
+	GeneratedFile    string // generated graph file location.
+	Format           string // default: svg, e.g., svg, png.
 	DisableAutoScale bool
 }
 
@@ -424,4 +461,12 @@ func DotGen(g *DGraph, p DotGenParam) (DotGenParam, error) {
 	}
 
 	return p, nil
+}
+
+func DotGenOpen(g *DGraph, p DotGenParam) (DotGenParam, error) {
+	pp, err := DotGen(g, p)
+	if err != nil {
+		return pp, err
+	}
+	return pp, sys.TermOpenUrl(pp.GeneratedFile)
 }
