@@ -12,7 +12,9 @@ type KNodeGraphBuilder struct {
 	idCnt      int
 	keyedNodes map[string]Node
 	keyedEdges map[string]map[string]string
-	lastAdded  string
+
+	// key of last added node, doesn't support concurrent use
+	lastAdded string
 }
 
 func (b *KNodeGraphBuilder) BuildDGraph(title string) (*DGraph, error) {
@@ -73,10 +75,17 @@ func (b *KNodeGraphBuilder) SAdd(k string, label string) *KNodeGraphBuilder {
 	return b
 }
 
+// Add node to builder using given key and connect to last added node, this method should not be called concurrently.
 func (b *KNodeGraphBuilder) SAddConnectLast(k string, label string) *KNodeGraphBuilder {
-	last := b.lastAdded
+	last := b.lastAdded // not protected by lock
 	b.SAdd(k, label)
 	b.Connect(last, k)
+	return b
+}
+
+// Mark the node identified by the given key as the last added node, this method should not be called concurrently.
+func (b *KNodeGraphBuilder) SetLastAdded(k string) *KNodeGraphBuilder {
+	b.lastAdded = k // not protected by lock
 	return b
 }
 
