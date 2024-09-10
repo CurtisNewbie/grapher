@@ -54,6 +54,11 @@ func (b *KNodeGraphBuilder) Add(k string, node Node) (Node, bool) {
 	return node, true
 }
 
+func (b *KNodeGraphBuilder) SAddShape(k string, label string, shape string) *KNodeGraphBuilder {
+	b.Add(k, Node{Label: label, Shape: shape})
+	return b
+}
+
 // Attempt to add node to builder using the given key.
 //
 // Node.Id is always ignored.
@@ -61,11 +66,12 @@ func (b *KNodeGraphBuilder) Add(k string, node Node) (Node, bool) {
 // If the key exists, the previous node is returned instead of the given node.
 //
 // If the key doesn't exist, the given node is assigned a id and added to the builder.
-func (b *KNodeGraphBuilder) SAdd(k string, label string) (Node, bool) {
-	return b.Add(k, Node{Label: label})
+func (b *KNodeGraphBuilder) SAdd(k string, label string) *KNodeGraphBuilder {
+	b.Add(k, Node{Label: label})
+	return b
 }
 
-func (b *KNodeGraphBuilder) SConnect(k1 string, k2 string, label string) {
+func (b *KNodeGraphBuilder) SConnect(k1 string, k2 string, label string) *KNodeGraphBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	s, ok := b.keyedEdges[k1]
@@ -81,10 +87,12 @@ func (b *KNodeGraphBuilder) SConnect(k1 string, k2 string, label string) {
 		s[k2] = label
 		b.keyedEdges[k1] = s
 	}
+	return b
 }
 
-func (b *KNodeGraphBuilder) Connect(k1 string, k2 string) {
+func (b *KNodeGraphBuilder) Connect(k1 string, k2 string) *KNodeGraphBuilder {
 	b.SConnect(k1, k2, "")
+	return b
 }
 
 func (b *KNodeGraphBuilder) Nodes() []Node {
