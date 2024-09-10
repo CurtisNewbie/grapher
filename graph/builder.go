@@ -12,6 +12,7 @@ type KNodeGraphBuilder struct {
 	idCnt      int
 	keyedNodes map[string]Node
 	keyedEdges map[string]map[string]string
+	lastAdded  string
 }
 
 func (b *KNodeGraphBuilder) BuildDGraph(title string) (*DGraph, error) {
@@ -51,6 +52,7 @@ func (b *KNodeGraphBuilder) Add(k string, node Node) (Node, bool) {
 	b.idCnt++
 	node.Id = b.idCnt
 	b.keyedNodes[k] = node
+	b.lastAdded = k
 	return node, true
 }
 
@@ -68,6 +70,13 @@ func (b *KNodeGraphBuilder) SAddShape(k string, label string, shape string) *KNo
 // If the key doesn't exist, the given node is assigned a id and added to the builder.
 func (b *KNodeGraphBuilder) SAdd(k string, label string) *KNodeGraphBuilder {
 	b.Add(k, Node{Label: label})
+	return b
+}
+
+func (b *KNodeGraphBuilder) SAddConnectLast(k string, label string) *KNodeGraphBuilder {
+	last := b.lastAdded
+	b.SAdd(k, label)
+	b.Connect(last, k)
 	return b
 }
 
