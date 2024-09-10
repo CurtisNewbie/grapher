@@ -83,6 +83,14 @@ func (b *KNodeGraphBuilder) SAddConnectLast(k string, label string) *KNodeGraphB
 	return b
 }
 
+// Add node to builder using given key and connect to last added node, this method should not be called concurrently.
+func (b *KNodeGraphBuilder) SAddShapeConnectLast(k string, label string, shape string) *KNodeGraphBuilder {
+	last := b.lastAdded // not protected by lock
+	b.SAddShape(k, label, shape)
+	b.Connect(last, k)
+	return b
+}
+
 // Mark the node identified by the given key as the last added node, this method should not be called concurrently.
 func (b *KNodeGraphBuilder) SetLastAdded(k string) *KNodeGraphBuilder {
 	b.lastAdded = k // not protected by lock
