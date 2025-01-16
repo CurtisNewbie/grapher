@@ -28,7 +28,7 @@ go build -o mtree cmd/mtree/main.go
 mvn dependency:tree > tree.out && mtree -file tree.out
 
 # pipe output to mtree
-mvn dependency:tree | mtree -file tree.out
+mvn dependency:tree | mtree
 
 # let mtree obtain output of dependency:tree directly
 mtree -pom myproject
