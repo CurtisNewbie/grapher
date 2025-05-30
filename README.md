@@ -2,6 +2,12 @@
 
 Simple lib to draw directed graph. grapher depends on graphviz.
 
+Prerequisite:
+
+```sh
+brew install graphviz
+```
+
 ## cmd/mtree
 
 mtree supports parsing output of `mvn dependency:tree` into a graph to display.
